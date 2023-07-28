@@ -118,8 +118,9 @@ class CardFormat:
     left_margin: float
     columns_spacing: float
     rows_spacing: float
-
     threshold: float
+    size_cer: int
+    reverse: bool
 
 
 def word_from_data(data):
@@ -169,8 +170,22 @@ test_format = CardFormat(
     left_margin=0.25,
     rows_spacing=0.56,
     columns_spacing=0.088,
+    size_cer = 1,
+    threshold = 0.2,
+    reverse = False
+)
 
-    threshold=0.2
+card_format = CardFormat(
+    columns=30,
+    rows=4,
+    reference_width=7.38,
+    top_margin=2.42,
+    left_margin=0.42,
+    rows_spacing=0.17,
+    columns_spacing=0.226,
+    size_cer = 10,
+    threshold=0.79,
+    reverse = True
 )
 
 class CardRecognizer:
@@ -187,7 +202,8 @@ class CardRecognizer:
             raise Exception(f"cannot open image file at path: {path}")
 
         self.geometry = CardGeometry(0, 0, 0, 0)
-        self.format = deepcopy(test_format)
+        # For GE120 Card
+        self.format = deepcopy(card_format)
 
     @property
     def row_y(self):
@@ -220,16 +236,28 @@ class CardRecognizer:
     def parse_card(self):
         data = []
 
+        rectangle_width = rectangle_height = int(self.format.size_cer)
         for x in self.column_x:
             column = []
             data.append(column)
 
             for y in self.row_y:
-                color = self.image.pixel(x, y)
-                r, g, b, _ = QColor(color).getRgbF()
-                gray = (r + g + b) / 3
+                sum_pixels = 0
+                for i in range(rectangle_width):
+                    for j in range(rectangle_height):
+                        color = self.image.pixel(x + i, y + j)
+                        r, g, b, _ = QColor(color).getRgbF()
+                        gray = (r + g + b) / 3
+                        sum_pixels += gray
 
-                isHole = gray < self.format.threshold
+                average_gray = sum_pixels / (rectangle_width * rectangle_height)
+                isHole = average_gray < self.format.threshold
+
+                # color = self.image.pixel(x, y)
+                # r, g, b, _ = QColor(color).getRgbF()
+                # gray = (r + g + b) / 3
+
+                # isHole = gray < self.format.threshold
                 column.append(isHole)
 
         return data
@@ -255,6 +283,12 @@ class MainWindow(QMainWindow):
             self.on_open
         )
         self.open_action.setShortcut(QKeySequence.Open)
+        self.save_action = bar.addAction(
+            self.style().standardIcon(QStyle.SP_DialogSaveButton),
+            "Save",
+            self.on_save
+        )
+        self.save_action.setShortcut(QKeySequence.Save)
 
         bar.addSeparator()
 
@@ -330,6 +364,12 @@ class MainWindow(QMainWindow):
         self.threshold_edit.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Threshold", self.threshold_edit)
 
+        self.size_cer = QDoubleSpinBox()
+        self.size_cer.setSingleStep(0.01)
+        self.size_cer.setMinimumWidth(1)
+        self.size_cer.valueChanged.connect(self.ui_changed)
+        panel_layout.addRow("Size_Cer", self.size_cer)
+
         panel_group.setLayout(panel_layout)
 
         hor_split = QSplitter(Qt.Horizontal)
@@ -377,6 +417,8 @@ class MainWindow(QMainWindow):
 
     def set_ui_values(self):
         self.updating = True
+        self.card_recognizer.geometry.bottom = 760
+        self.card_recognizer.geometry.right = 568
         self.top_left_handle.setPos(self.card_recognizer.geometry.top_left)
         self.bottom_right_handle.setPos(self.card_recognizer.geometry.bottom_right)
         self.columns_edit.setValue(self.card_recognizer.format.columns)
@@ -387,6 +429,7 @@ class MainWindow(QMainWindow):
         self.rows_spacing_edit.setValue(self.card_recognizer.format.rows_spacing)
         self.columns_spacing_edit.setValue(self.card_recognizer.format.columns_spacing)
         self.threshold_edit.setValue(self.card_recognizer.format.threshold)
+        self.size_cer.setValue(self.card_recognizer.format.size_cer)
         self.updating = False
 
     def ui_changed(self):
@@ -405,6 +448,7 @@ class MainWindow(QMainWindow):
         self.card_recognizer.format.rows_spacing    = self.rows_spacing_edit.value()
         self.card_recognizer.format.columns_spacing = self.columns_spacing_edit.value()
         self.card_recognizer.format.threshold       = self.threshold_edit.value()
+        self.card_recognizer.format.size_cer       = self.size_cer.value()
 
         self.update()
 
@@ -419,6 +463,7 @@ class MainWindow(QMainWindow):
         for line in self.card_recognizer.row_lines:
             line_item = self.scene.addLine(line)
             line_item.setPen(QColor(255, 0, 255))
+            line_item.pen().setWidth(2)
             self.items_to_delete.append(line_item)
 
         for line in self.card_recognizer.column_lines:
@@ -455,10 +500,24 @@ class MainWindow(QMainWindow):
     def on_save(self):
         dialog = self.dialog("Save File")
         dialog.setAcceptMode(QFileDialog.AcceptSave)
+        data = self.card_recognizer.parse_card()
+        print(data)
         if dialog.exec() == QFileDialog.Accepted:
             if dialog.selectedFiles():
                 name = dialog.selectedFiles()[0]
-                print(f"save {name}")
+                with open(f'{name}', 'w') as f:
+                    rows = len(data[0])
+                    columns = len(data)
+
+                    for i in range(rows):
+                        row = ""
+                        for j in range(columns):
+                            row += "1" if data[j][i] else "0"
+                        if self.card_recognizer.format.reverse:
+                            row  = row[::-1]
+                        f.write(row + '\n')
+                        print(row)
+                        row = ""
 
     def on_open(self):
         dialog = self.dialog("Load File")
