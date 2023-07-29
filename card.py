@@ -119,7 +119,7 @@ class CardFormat:
     columns_spacing: float
     rows_spacing: float
     threshold: float
-    size_cer: int
+    radius: int
     reverse: bool
 
 
@@ -170,7 +170,7 @@ test_format = CardFormat(
     left_margin=0.25,
     rows_spacing=0.56,
     columns_spacing=0.088,
-    size_cer = 1,
+    radius = 1,
     threshold = 0.2,
     reverse = False
 )
@@ -184,7 +184,7 @@ card_format = CardFormat(
     rows_spacing=0.17,
     columns_spacing=0.226,
     radius = 5,
-    threshold=0.75,
+    threshold=0.69,
     reverse = True
 )
 
