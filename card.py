@@ -183,7 +183,7 @@ card_format = CardFormat(
     left_margin=0.42,
     rows_spacing=0.17,
     columns_spacing=0.226,
-    size_cer = 10,
+    radius = 10,
     threshold=0.79,
     reverse = True
 )
@@ -236,7 +236,7 @@ class CardRecognizer:
     def parse_card(self):
         data = []
 
-        rectangle_width = rectangle_height = int(self.format.size_cer)
+        rectangle_width = rectangle_height = int(self.format.radius)
         for x in self.column_x:
             column = []
             data.append(column)
@@ -364,11 +364,11 @@ class MainWindow(QMainWindow):
         self.threshold_edit.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Threshold", self.threshold_edit)
 
-        self.size_cer = QDoubleSpinBox()
-        self.size_cer.setSingleStep(0.01)
-        self.size_cer.setMinimumWidth(1)
-        self.size_cer.valueChanged.connect(self.ui_changed)
-        panel_layout.addRow("Size_Cer", self.size_cer)
+        self.radius = QDoubleSpinBox()
+        self.radius.setSingleStep(0.01)
+        self.radius.setMinimumWidth(1)
+        self.radius.valueChanged.connect(self.ui_changed)
+        panel_layout.addRow("Radius", self.radius)
 
         panel_group.setLayout(panel_layout)
 
@@ -429,7 +429,7 @@ class MainWindow(QMainWindow):
         self.rows_spacing_edit.setValue(self.card_recognizer.format.rows_spacing)
         self.columns_spacing_edit.setValue(self.card_recognizer.format.columns_spacing)
         self.threshold_edit.setValue(self.card_recognizer.format.threshold)
-        self.size_cer.setValue(self.card_recognizer.format.size_cer)
+        self.radius.setValue(self.card_recognizer.format.radius)
         self.updating = False
 
     def ui_changed(self):
@@ -448,7 +448,7 @@ class MainWindow(QMainWindow):
         self.card_recognizer.format.rows_spacing    = self.rows_spacing_edit.value()
         self.card_recognizer.format.columns_spacing = self.columns_spacing_edit.value()
         self.card_recognizer.format.threshold       = self.threshold_edit.value()
-        self.card_recognizer.format.size_cer       = self.size_cer.value()
+        self.card_recognizer.format.radius       = self.radius.value()
 
         self.update()
 
