@@ -183,8 +183,8 @@ card_format = CardFormat(
     left_margin=0.42,
     rows_spacing=0.17,
     columns_spacing=0.226,
-    radius = 10,
-    threshold=0.79,
+    radius = 5,
+    threshold=0.75,
     reverse = True
 )
 
