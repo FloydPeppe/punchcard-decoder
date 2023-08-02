@@ -335,24 +335,27 @@ class MainWindow(QMainWindow):
 
         self.top_margin_edit = QDoubleSpinBox()
         self.top_margin_edit.setSingleStep(0.01)
+        self.top_margin_edit.setDecimals(3)
         self.top_margin_edit.setMinimumWidth(minimum_spin_size)
         self.top_margin_edit.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Top Margin", self.top_margin_edit)
 
         self.left_margin_edit = QDoubleSpinBox()
         self.left_margin_edit.setSingleStep(0.01)
+        self.left_margin_edit.setDecimals(3)
         self.left_margin_edit.setMinimumWidth(minimum_spin_size)
         self.left_margin_edit.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Left Margin", self.left_margin_edit)
 
         self.rows_spacing_edit = QDoubleSpinBox()
-        self.rows_spacing_edit.setSingleStep(0.01)
+        self.rows_spacing_edit.setSingleStep(0.001)
+        self.rows_spacing_edit.setDecimals(3)
         self.rows_spacing_edit.setMinimumWidth(minimum_spin_size)
         self.rows_spacing_edit.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Rows Spacing", self.rows_spacing_edit)
 
         self.columns_spacing_edit = QDoubleSpinBox()
-        self.columns_spacing_edit.setSingleStep(0.01)
+        self.columns_spacing_edit.setSingleStep(0.001)
         self.columns_spacing_edit.setDecimals(3)
         self.columns_spacing_edit.setMinimumWidth(minimum_spin_size)
         self.columns_spacing_edit.valueChanged.connect(self.ui_changed)
@@ -365,7 +368,7 @@ class MainWindow(QMainWindow):
         panel_layout.addRow("Threshold", self.threshold_edit)
 
         self.radius = QDoubleSpinBox()
-        self.radius.setSingleStep(0.01)
+        self.radius.setSingleStep(1)
         self.radius.setMinimumWidth(1)
         self.radius.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Radius", self.radius)
