@@ -420,8 +420,12 @@ class MainWindow(QMainWindow):
 
     def set_ui_values(self):
         self.updating = True
-        self.card_recognizer.geometry.bottom = 760
-        self.card_recognizer.geometry.right = 568
+
+        self.card_recognizer.geometry.left = self.card_recognizer.image.rect().x()
+        self.card_recognizer.geometry.top = self.card_recognizer.image.rect().y()
+        self.card_recognizer.geometry.right = self.card_recognizer.image.width()
+        self.card_recognizer.geometry.bottom = self.card_recognizer.image.height()
+
         self.top_left_handle.setPos(self.card_recognizer.geometry.top_left)
         self.bottom_right_handle.setPos(self.card_recognizer.geometry.bottom_right)
         self.columns_edit.setValue(self.card_recognizer.format.columns)
