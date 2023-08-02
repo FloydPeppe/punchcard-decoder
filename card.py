@@ -44,16 +44,19 @@ translate = master_card_to_map(IBM_MODEL_029_KEYPUNCH)
 class ZoomableGraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super(ZoomableGraphicsView, self).__init__(parent)
+        self.previousValue = 1
 
-    def wheelEvent(self, event: QWheelEvent):
-        oldAnchor = self.transformationAnchor()
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        angle = event.angleDelta().y()
+    def zoom(self, value):
+        value = 0.01 if value <= 0 else value
+        zoomfactor = 1 / self.previousValue * value
+        self.scale(zoomfactor, zoomfactor)
+        self.previousValue = value
 
-        zoomFactor = 1.25 if angle > 0 else 1 / 1.25
+    def zoomIn(self):
+        self.scale(1.1, 1.1)
 
-        self.scale(zoomFactor, zoomFactor)
-        self.setTransformationAnchor(oldAnchor)
+    def zoomOut(self):
+        self.scale(0.9, 0.9)
 
 
 class Handle(QGraphicsItemGroup):
@@ -121,6 +124,7 @@ class CardFormat:
     threshold: float
     radius: int
     reverse: bool
+    zoom: float
 
 
 def word_from_data(data):
@@ -172,7 +176,8 @@ test_format = CardFormat(
     columns_spacing=0.088,
     radius = 1,
     threshold = 0.2,
-    reverse = False
+    reverse=False,
+    zoom=1
 )
 
 card_format = CardFormat(
@@ -185,7 +190,8 @@ card_format = CardFormat(
     columns_spacing=0.226,
     radius = 5,
     threshold=0.69,
-    reverse = True
+    reverse = True,
+    zoom=1
 )
 
 class CardRecognizer:
@@ -266,6 +272,8 @@ class CardRecognizer:
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
+        self.scene = QGraphicsScene()
+        self.scene_widget = ZoomableGraphicsView(self.scene)
 
         bar = self.addToolBar("Toolbar")
         bar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
@@ -290,6 +298,14 @@ class MainWindow(QMainWindow):
         )
         self.save_action.setShortcut(QKeySequence.Save)
 
+        bar.addAction(
+            self.style().standardIcon(QStyle.SP_TitleBarUnshadeButton), "Zoom in", self.scene_widget.zoomIn
+        ).setShortcut(QKeySequence.ZoomIn)
+
+        bar.addAction(
+            self.style().standardIcon(QStyle.SP_TitleBarShadeButton), "Zoom out", self.scene_widget.zoomOut
+        ).setShortcut(QKeySequence.ZoomOut)
+
         bar.addSeparator()
 
         font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -301,9 +317,6 @@ class MainWindow(QMainWindow):
         self.text_label.setContentsMargins(10, 10, 10, 10)
         self.text_label.setFont(font)
         bar.addWidget(self.text_label)
-
-        self.scene = QGraphicsScene()
-        self.scene_widget = ZoomableGraphicsView(self.scene)
 
         font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         self.text_edit = QTextEdit()
@@ -373,6 +386,12 @@ class MainWindow(QMainWindow):
         self.radius.valueChanged.connect(self.ui_changed)
         panel_layout.addRow("Radius", self.radius)
 
+        self.zoom = QDoubleSpinBox()
+        self.zoom.setSingleStep(0.01)
+        self.zoom.setMinimumWidth(1)
+        self.zoom.valueChanged.connect(self.ui_changed)
+        panel_layout.addRow("Fine zoom", self.zoom)
+
         panel_group.setLayout(panel_layout)
 
         hor_split = QSplitter(Qt.Horizontal)
@@ -437,6 +456,8 @@ class MainWindow(QMainWindow):
         self.columns_spacing_edit.setValue(self.card_recognizer.format.columns_spacing)
         self.threshold_edit.setValue(self.card_recognizer.format.threshold)
         self.radius.setValue(self.card_recognizer.format.radius)
+        self.zoom.setValue(self.card_recognizer.format.zoom)
+
         self.updating = False
 
     def ui_changed(self):
@@ -456,10 +477,13 @@ class MainWindow(QMainWindow):
         self.card_recognizer.format.columns_spacing = self.columns_spacing_edit.value()
         self.card_recognizer.format.threshold       = self.threshold_edit.value()
         self.card_recognizer.format.radius       = self.radius.value()
+        self.card_recognizer.format.zoom = self.zoom.value()
 
         self.update()
 
     def update(self):
+        self.scene_widget.zoom(self.zoom.value())
+
         self.rect.setRect(self.card_recognizer.geometry.qrect)
 
         for line in self.items_to_delete:
