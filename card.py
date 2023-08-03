@@ -189,7 +189,7 @@ card_format = CardFormat(
     rows_spacing=0.17,
     columns_spacing=0.226,
     radius = 5,
-    threshold=0.69,
+    threshold=0.44,
     reverse = True,
     zoom=1
 )
